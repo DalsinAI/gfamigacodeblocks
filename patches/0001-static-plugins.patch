@@ -1,0 +1,147 @@
+diff --git a/src/include/cbplugin.h b/src/include/cbplugin.h
+index 10258e5..fab6a01 100644
+--- a/src/include/cbplugin.h
++++ b/src/include/cbplugin.h
+@@ -1133,6 +1133,15 @@ template<class T> class PluginRegistrant
+ {
+     public:
+         /// @param name The plugin's name.
++#ifdef CB_STATIC_PLUGIN_FILE
++        // linked into the program (AmigaOS has no shared C++ libraries): the
++        // plugin is only noted here, at static initialisation, and the
++        // plugin manager registers it when it scans for plugins
++        PluginRegistrant(const wxString& name)
++        {
++            cbAddStaticPlugin(name, CB_STATIC_PLUGIN_FILE, &CreatePlugin, &FreePlugin, &SDKVersion);
++        }
++#else
+         PluginRegistrant(const wxString& name)
+         {
+             Manager::Get()->GetPluginManager()->RegisterPlugin(name, // plugin's name
+@@ -1140,6 +1149,7 @@ template<class T> class PluginRegistrant
+                                                                 &FreePlugin, // destruction
+                                                                 &SDKVersion); // SDK version
+         }
++#endif
+ 
+         static cbPlugin* CreatePlugin()
+         {
+diff --git a/src/include/pluginmanager.h b/src/include/pluginmanager.h
+index 9944106..0a82a9f 100644
+--- a/src/include/pluginmanager.h
++++ b/src/include/pluginmanager.h
+@@ -35,6 +35,15 @@ typedef void(*PluginSDKVersionProc)(int*,int*,int*);
+ typedef cbPlugin*(*CreatePluginProc)();
+ typedef void(*FreePluginProc)(cbPlugin*);
+ 
++/** Notes a plugin linked into the program; its registrant calls this at
++  * static initialisation, and PluginManager::ScanForPlugins() loads it.
++  * @param file the plugin's file name without "lib" or extension: its
++  *        resources are file + ".zip". */
++extern DLLIMPORT void cbAddStaticPlugin(const wxString& name, const char* file,
++                                        CreatePluginProc createProc,
++                                        FreePluginProc freeProc,
++                                        PluginSDKVersionProc versionProc);
++
+ /** Information about the plugin */
+ struct PluginInfo
+ {
+diff --git a/src/sdk/pluginmanager.cpp b/src/sdk/pluginmanager.cpp
+index 122cd03..42380b9 100644
+--- a/src/sdk/pluginmanager.cpp
++++ b/src/sdk/pluginmanager.cpp
+@@ -1006,12 +1006,93 @@ void PluginManager::ReadExtraFilesFromManifestFile(const wxString& pluginFilenam
+     }
+ }
+ 
++namespace
++{
++    struct StaticPlugin
++    {
++        wxString name;
++        const char* file;
++        CreatePluginProc createProc;
++        FreePluginProc freeProc;
++        PluginSDKVersionProc versionProc;
++    };
++    // a function's static, so it exists before any registrant runs
++    std::vector<StaticPlugin>& StaticPlugins()
++    {
++        static std::vector<StaticPlugin> plugins;
++        return plugins;
++    }
++    bool s_StaticPluginsLoaded = false;
++}
++
++void cbAddStaticPlugin(const wxString& name, const char* file,
++                       CreatePluginProc createProc,
++                       FreePluginProc freeProc,
++                       PluginSDKVersionProc versionProc)
++{
++    StaticPlugin sp = { name, file, createProc, freeProc, versionProc };
++    StaticPlugins().push_back(sp);
++}
++
+ int PluginManager::ScanForPlugins(const wxString& path)
+ {
++    // the plugins linked into the program, once, as LoadPlugin() does for
++    // one that a library brings; their resources are found as a library's
++    // are, by the file name
++    int staticCount = 0;
++    if (!s_StaticPluginsLoaded)
++    {
++        s_StaticPluginsLoaded = true;
++        bool batchOnly = Manager::IsBatchBuild();
++        wxArrayString bbplugins;
++        if (batchOnly)
++            bbplugins = cbReadBatchBuildPlugins();
++        for (const StaticPlugin& sp : StaticPlugins())
++        {
++            const wxString file = wxString("lib") + wxString::FromUTF8(sp.file) + ".so";
++            if (batchOnly && bbplugins.Index(file) == wxNOT_FOUND)
++                continue;
++            m_RegisteredPlugins.clear();
++            m_pCurrentlyLoadingManifestDoc = nullptr;
++            m_CurrentlyLoadingFilename = file;
++            m_pCurrentlyLoadingLib = nullptr;
++            RegisterPlugin(sp.name, sp.createProc, sp.freeProc, sp.versionProc);
++            for (PluginRegistration& pr : m_RegisteredPlugins)
++            {
++                cbPlugin* plug = nullptr;
++                try
++                {
++                    plug = pr.createProc();
++                }
++                catch (cbException& exception)
++                {
++                    exception.ShowErrorMessage(false);
++                    continue;
++                }
++                PluginElement* plugElem = new PluginElement;
++                plugElem->fileName = file;
++                plugElem->info = pr.info;
++                plugElem->library = nullptr;
++                plugElem->freeProc = pr.freeProc;
++                plugElem->plugin = plug;
++                m_Plugins.Add(plugElem);
++                if (plug->GetType() == ptCompiler)
++                    m_CompilerPlugins.push_back(static_cast<cbCompilerPlugin*>(plug));
++                SetupLocaleDomain(pr.name);
++                ++staticCount;
++            }
++            m_RegisteredPlugins.clear();
++            delete m_pCurrentlyLoadingManifestDoc;
++            m_pCurrentlyLoadingManifestDoc = nullptr;
++            m_CurrentlyLoadingFilename.Clear();
++        }
++        Manager::Get()->GetLogManager()->Log(wxString::Format(_("Linked-in plugins: %d"), staticCount));
++    }
++
+     static const wxString PluginsMask = platform::windows                      ? "*.dll"
+                                       : (platform::darwin || platform::macosx) ? "*.dylib"
+                                       :                                          "*.so";
+-    int count = 0;
++    int count = staticCount;
+     if (!wxDirExists(path))
+         return count;
+ 

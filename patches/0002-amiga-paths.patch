@@ -1,0 +1,93 @@
+diff --git a/src/sdk/configmanager.cpp b/src/sdk/configmanager.cpp
+index 78ab5f9..63eaadb 100644
+--- a/src/sdk/configmanager.cpp
++++ b/src/sdk/configmanager.cpp
+@@ -77,6 +77,14 @@ namespace CfgMgrConsts
+     const int version = 1;
+ }
+ 
++#ifdef __AMIGA__
++extern "C" const char* amiga_program_dir(void);
++static wxString cbAmigaProgramDir()
++{
++    return wxString::FromUTF8(amiga_program_dir());
++}
++#endif
++
+ namespace
+ {
+     wxString DetermineExecutablePath()
+@@ -94,6 +102,11 @@ namespace
+                 return _T(".");
+             wxFileName fname(cbC2U(p));
+             return fname.GetPath(wxPATH_GET_VOLUME);
++        #elif defined(__AMIGA__)
++            // the program's drawer as a full path (Work:CodeBlocks), so
++            // that path + "/" + name works as on Unix; PROGDIR:/ would be
++            // the drawer's parent
++            return cbAmigaProgramDir();
+         #elif defined(sun) || defined(__sun)
+             wxFileName fname(cbC2U(getexecname()));
+             return fname.GetPath(wxPATH_GET_VOLUME);
+@@ -571,6 +584,9 @@ inline wxString ConfigManager::GetUserDataFolder()
+         return wxString::Format(_T("%s\\CodeBlocks"), buffer);
+     else
+         return wxStandardPathsBase::Get().GetUserDataDir();
++#elif defined(__AMIGA__)
++    // settings beside the program, in its drawer's Config drawer
++    return cbAmigaProgramDir() + "/Config";
+ #else
+ #ifdef __linux__
+     gchar *filename = g_build_filename(g_get_user_config_dir(), "codeblocks", nullptr);
+@@ -1488,7 +1504,11 @@ void ConfigManager::InitPaths()
+         else if (platform::macosx)
+             ConfigManager::data_path_global = res_path + _T("/share/codeblocks");
+         else
++#ifdef __AMIGA__
++            ConfigManager::data_path_global = cbAmigaProgramDir() + "/share/codeblocks";
++#else
+             ConfigManager::data_path_global = wxStandardPathsBase::Get().GetDataDir();
++#endif
+     }
+     else
+         ConfigManager::data_path_global = UnixFilename(data_path_global);
+diff --git a/src/src/app.cpp b/src/src/app.cpp
+index 50668cb..cb08fbe 100644
+--- a/src/src/app.cpp
++++ b/src/src/app.cpp
+@@ -65,6 +65,10 @@
+     #include "cbproject.h"
+ #endif
+ 
++#ifdef __AMIGA__
++extern "C" const char* amiga_program_dir(void); // the program's drawer, deps/amiga
++#endif
++
+ #ifndef APP_PREFIX
+     #define APP_PREFIX ""
+ #endif
+@@ -386,6 +390,11 @@ bool CodeBlocksApp::LoadConfig()
+             data = GetAppPath() + _T("/..");
+     }
+ 
++#ifdef __AMIGA__
++    // the install is one drawer: the program, share/ and Config/ in it
++    if (data.IsEmpty())
++        data.assign(GetAppPath());
++#endif
+     if (data.IsEmpty())
+     {
+         data.assign(GetAppPath());  // fallback
+@@ -1130,8 +1139,12 @@ wxString CodeBlocksApp::GetAppPath() const
+     if (!m_Prefix.IsEmpty())
+         return m_Prefix;
+ 
++#ifdef __AMIGA__
++    base = wxString::FromUTF8(amiga_program_dir());
++#else
+     base = wxStandardPaths::Get().GetExecutablePath();
+     base = wxFileName(base).GetPath();
++#endif
+     if (base.empty())
+         base = ".";
+ #endif
