@@ -6,7 +6,7 @@ CB_DATE="2025-03-29 05:36:19"
 CB_URL=https://sourceforge.net/projects/codeblocks/files/Sources/25.03/codeblocks_25.03.tar.xz/download
 CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
 # Our own pieces, fetched at these commits
-# GFOpenWX Toolkit (wxWidgets on GFOpenLayout); AUI, XRC, XML and the zip
-# file system are owed by the toolkit: this pin moves when they land
+# GFOpenWX Toolkit (wxWidgets on GFOpenLayout), with AUI, XRC, XML, the zip
+# file system, propgrid and richtext: branch team3/wx-libraries-20261105 (PR #3)
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-WXT_COMMIT=e75e16f8278a2c93a23d4ba0fbf2b098c59c0ec4
+WXT_COMMIT=b4e7063b10dc52f0deb417d5f647ffacdad327a5
