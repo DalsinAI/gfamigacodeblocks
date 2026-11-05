@@ -18,7 +18,7 @@ Left out for now: the debugger plugin (no gdb for the Amiga yet), the contrib pl
 STOVE=~/AmiCradle/stoves/os32-gcc16-open6 OUT=out ./build-amiga.sh
 ```
 
-The first run fetches the GFOpenWX Toolkit at the commit `codeblocks.lock` pins and builds its SDK, then fetches Code::Blocks and builds it for what is left of 840 s; run it again and it goes on from where it stopped. `out/CodeBlocks/` appears when it links: copy the drawer anywhere and run `CodeBlocks` from it. Settings go in its `Config` drawer.
+The first run fetches the GFOpenWX Toolkit at the commit `codeblocks.lock` pins and builds its SDK, then fetches Code::Blocks and builds it for what is left of 840 s; run it again and it goes on from where it stopped (the build tree is in `~/.cache/gfamigacodeblocks/build`, outside the checkout). `out/CodeBlocks/` appears when it links: copy the drawer anywhere and run `CodeBlocks` from it. Settings go in its `Config` drawer.
 
 68040, soft float. With `FPUAUTO=` set to a directory holding `fpuauto.specs` and `libfpuauto.a`, the same program uses the FPU when there is one.
 

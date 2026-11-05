@@ -13,7 +13,10 @@ set -eu
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$HERE/codeblocks.lock"
 STOVE=${STOVE:-"$HOME/AmiCradle/stoves/os32-gcc16-open6"}
-OUT="${OUT:-$HERE/build/out}"; WORK="${WORK:-$HERE/build}"; JOBS=${JOBS:-12}
+# the build tree lives outside the checkout, so a checkout that is cleaned
+# between runs (Cradle's stove jobs run git clean -ffdx) still goes on
+WORK="${WORK:-${XDG_CACHE_HOME:-$HOME/.cache}/gfamigacodeblocks/build}"
+OUT="${OUT:-$HERE/build/out}"; JOBS=${JOBS:-12}
 TC="$STOVE/prefix"
 mkdir -p "$WORK/deps" "$OUT"
 t0=$(date +%s)
