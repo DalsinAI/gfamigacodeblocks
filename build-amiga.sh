@@ -1,10 +1,10 @@
 #!/bin/sh
 # Builds Code::Blocks 25.03 for AmigaOS 3, 68040, with a stove: the
-# GFOpenWX Toolkit SDK first, then Code::Blocks (scripts/build-codeblocks.sh)
+# GFOpenWX Toolkit SDK first (and OXP's source), then Code::Blocks (scripts/build-codeblocks.sh)
 # for what is left of BUDGET_TOTAL seconds; the build tree is kept, so the
 # next run goes on from where it stopped.
 #   STOVE=.../stoves/os32-gcc16-open6 OUT=out ./build-amiga.sh
-#   (WXT_SRC=... to use a toolkit tree already on disk)
+#   (WXT_SRC=... to use a toolkit tree already on disk, OXP_SRC=... gfopenxml's oxp/)
 # Code::Blocks is fetched at the version codeblocks.lock gives; nothing
 # third-party is kept here. OUT gets CodeBlocks/ (the program and its
 # share/codeblocks) when it links.
@@ -31,6 +31,7 @@ fetch() {
     fi
 }
 if [ -z "${WXT_SRC:-}" ]; then fetch gfopenwxtoolkit "$WXT_REPO" "$WXT_COMMIT"; WXT_SRC="$WORK/deps/gfopenwxtoolkit"; fi
+if [ -z "${OXP_SRC:-}" ]; then fetch gfopenxml "$OXP_REPO" "$OXP_COMMIT"; OXP_SRC="$WORK/deps/gfopenxml/oxp"; fi
 
 # the toolkit again only when its tree changed since its SDK was made
 WXB="$WORK/gfopenwx"
@@ -44,6 +45,6 @@ fi
 
 left=$(( ${BUDGET_TOTAL:-840} - ($(date +%s) - t0) ))
 [ "$left" -gt 60 ] || { echo "no time left for Code::Blocks this run"; exit 0; }
-TOOLCHAIN="$TC" WORK="$WORK" OUT="$OUT" JOBS=$JOBS WX_SDK="$WXB/out/sdk" BUDGET=$left \
+TOOLCHAIN="$TC" WORK="$WORK" OUT="$OUT" JOBS=$JOBS WX_SDK="$WXB/out/sdk" OXP_SRC="$OXP_SRC" BUDGET=$left \
     sh "$HERE/scripts/build-codeblocks.sh"
 echo "total: $(( $(date +%s) - t0 )) s"

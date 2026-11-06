@@ -6,6 +6,7 @@
 # as make install lays it out. The build tree is kept, so a build that runs
 # out of time goes on from where it stopped (BUDGET seconds of make a run).
 #   TOOLCHAIN=.../prefix WX_SDK=... WORK=build OUT=out scripts/build-codeblocks.sh
+#   OXP_SRC=gfopenxml's oxp/: our XML parser, under our TinyXML interface
 #   FPUAUTO=dir with fpuauto.specs and libfpuauto.a: the FPU when there is one
 # Copyright (c) 2026 AmiCradle Team
 set -eu
@@ -24,7 +25,7 @@ if [ ! -f "$D/codeblocks.tar.xz" ] || ! echo "$CB_SHA256  $D/codeblocks.tar.xz" 
     mv "$D/codeblocks.tar.xz.part" "$D/codeblocks.tar.xz"
 fi
 EXTRA=""; [ -n "${EXTRA_PATCHES:-}" ] && EXTRA=$(ls "$EXTRA_PATCHES"/*.patch 2>/dev/null || true)
-PSUM=$(cat "$HERE"/patches/*.patch $EXTRA | sha256sum | cut -c1-16)
+PSUM=$(cat "$HERE"/patches/*.patch $EXTRA "$HERE/scripts/scicompat.py" "$HERE"/deps/tinyxml-oxp/* | sha256sum | cut -c1-16)
 if [ "$(cat "$SRC/.patched" 2>/dev/null)" != "$CB_SHA256-$PSUM" ]; then
     # a fresh tree, patched, then copied over the old one by content, so
     # only the files a patch change touches are compiled again
@@ -36,6 +37,17 @@ if [ "$(cat "$SRC/.patched" 2>/dev/null)" != "$CB_SHA256-$PSUM" ]; then
     # what configure and build_tools/autorevision would write
     sed -e "s|@REVISION@|$CB_REVISION|g" -e "s|@DATE@|$CB_DATE|g" \
         "$N/src/include/autorevision.h.in" > "$N/src/include/autorevision.h"
+    # the editor on the toolkit's wxStyledTextCtrl, not the wxScintilla copy
+    # (config/build.conf skips its directory)
+    SCI="$N/src/sdk/wxscintilla/include/wx/wxscintilla.h"
+    python3 -I "$HERE/scripts/scicompat.py" "$SCI" "$SCI.new" && mv "$SCI.new" "$SCI"
+    # XML through OXP: our TinyXML interface in place of the TinyXML copy
+    cp "$HERE/deps/tinyxml-oxp/tinyxml.h" "$N/src/include/tinyxml/tinyxml.h"
+    echo '#include "tinyxml.h"' > "$N/src/include/tinyxml/tinystr.h"
+    cp "$HERE/deps/tinyxml-oxp/tinyxml.cpp" "$N/src/base/tinyxml/tinyxml.cpp"
+    for f in tinystr tinyxmlerror tinyxmlparser; do
+        echo '// in tinyxml.cpp (deps/tinyxml-oxp)' > "$N/src/base/tinyxml/$f.cpp"
+    done
     if [ -d "$SRC" ] && command -v rsync >/dev/null; then
         rsync -a --checksum --delete --exclude=.patched "$N/" "$SRC/"; rm -rf "$N"
     else
@@ -49,8 +61,8 @@ W="$WX_SDK/bin/wx-config"
 LATE=""
 if m68k-amigaos-gcc -fno-late-combine-instructions -S -o /dev/null -x c /dev/null 2>/dev/null; then LATE="-fno-late-combine-instructions"; fi
 CF="-noixemul -m68040 -O2 $LATE"
-DEFS="-DTIXML_USE_STL=YES -I$SRC/src/include/tinyxml"
-MSUM=$( (cat "$SRC/.patched" "$HERE/scripts/amake.py" "$HERE/config/build.conf" "$0"; "$W" --cxxflags) | sha256sum | cut -c1-16)
+DEFS="-DTIXML_USE_STL=YES -I$SRC/src/include/tinyxml -I$OXP_SRC/include"
+MSUM=$( (cat "$SRC/.patched" "$HERE/scripts/amake.py" "$HERE/config/build.conf" "$HERE/scripts/scicompat.py" "$0"; "$W" --cxxflags) | sha256sum | cut -c1-16)
 mkdir -p "$B"
 if [ "$(cat "$B/.rules" 2>/dev/null)" != "$MSUM" ]; then
     python3 -I "$HERE/scripts/amake.py" "$SRC" "$HERE/config/build.conf" "$B" "$B/cb.mk"
@@ -65,9 +77,13 @@ if [ "$(cat "$B/.rules" 2>/dev/null)" != "$MSUM" ]; then
         echo "include cb.mk"
         echo "obj/amiga/progdir.o: $HERE/deps/amiga/progdir.c"
         printf '\t@mkdir -p $(@D)\n\t$(CC) $(CBCFLAGS) -c $< -o $@\n'
-        echo "all: \$(CB_LIBS) \$(CB_PLUGINS) \$(codeblocks_OBJS) obj/amiga/progdir.o link.args"
+        echo "obj/oxp/oxp.o: $OXP_SRC/src/oxp.c"
+        printf '\t@mkdir -p $(@D)\n\t$(CC) $(CBCFLAGS) -std=gnu99 -c $< -o $@\n'
+        echo "obj/amiga/wxscintilla.o: $HERE/deps/amiga/wxscintilla.cpp"
+        printf '\t@mkdir -p $(@D)\n\t$(CXX) $(CBCXXFLAGS) $(WX_CXXFLAGS) -I$SRC/src/sdk/wxscintilla/include -c $< -o $@\n'
+        echo "all: \$(CB_LIBS) \$(CB_PLUGINS) \$(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/wxscintilla.o obj/oxp/oxp.o link.args"
         echo "link.args: Makefile cb.mk"
-        printf '\t@echo $(codeblocks_OBJS) obj/amiga/progdir.o -Wl,--whole-archive $(CB_PLUGINS) -Wl,--no-whole-archive -Wl,--start-group $(CB_LIBS) -Wl,--end-group > $@\n'
+        printf '\t@echo $(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/wxscintilla.o obj/oxp/oxp.o -Wl,--whole-archive $(CB_PLUGINS) -Wl,--no-whole-archive -Wl,--start-group $(CB_LIBS) -Wl,--end-group > $@\n'
     } > "$B/Makefile"
     echo "$MSUM" > "$B/.rules"
 fi

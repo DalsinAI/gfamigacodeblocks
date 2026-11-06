@@ -11,3 +11,7 @@ CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
 # main, with wxLaunchDefaultApplication through Workbench
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
 WXT_COMMIT=7fb2de8eb56eac123103f5cbff0cd787ab937268
+# OXP, our XML parser (gfopenxml): under deps/tinyxml-oxp, our own
+# TinyXML interface, in place of Code::Blocks' TinyXML copy
+OXP_REPO=https://github.com/DalsinAI/gfopenxml
+OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
