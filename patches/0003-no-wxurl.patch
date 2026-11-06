@@ -1,0 +1,44 @@
+diff --git a/src/sdk/configmanager.cpp b/src/sdk/configmanager.cpp
+index 63eaadb..399b75e 100644
+--- a/src/sdk/configmanager.cpp
++++ b/src/sdk/configmanager.cpp
+@@ -323,6 +323,7 @@ void CfgMgrBldr::SwitchToR(const wxString& absFileName)
+ 
+     cfg = absFileName;
+ 
++#if wxUSE_URL
+     wxURL url(absFileName);
+     url.SetProxy(ConfigManager::GetProxy());
+     if (url.GetError() == wxURL_NOERR)
+@@ -352,6 +353,7 @@ void CfgMgrBldr::SwitchToR(const wxString& absFileName)
+         }
+         delete is;
+     }
++#endif // wxUSE_URL: without it (AmigaOS) a remote config is never read
+     cfg.Empty();
+     SwitchTo(wxEmptyString); // fall back
+ }
+diff --git a/src/sdk/filemanager.cpp b/src/sdk/filemanager.cpp
+index da7d493..44d9299 100644
+--- a/src/sdk/filemanager.cpp
++++ b/src/sdk/filemanager.cpp
+@@ -82,6 +82,11 @@ void FileLoader::operator()()
+ // ***** class: URLLoader *****
+ void URLLoader::operator()()
+ {
++#if !wxUSE_URL
++    // no wxURL in this wx (AmigaOS): a URL loads nothing, as a failed one
++    Ready();
++    return;
++#else
+     wxURL url(fileName);
+     url.SetProxy(ConfigManager::GetProxy());
+ 
+@@ -116,6 +121,7 @@ void URLLoader::operator()()
+     const char Zeros4[] = "\0\0\0\0";
+     mBuffer.insert(mBuffer.end(), Zeros4, Zeros4 + 4);
+     Ready();
++#endif // wxUSE_URL
+ }
+ 
+ // ***** class: FileManager *****

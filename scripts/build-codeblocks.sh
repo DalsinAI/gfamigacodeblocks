@@ -26,14 +26,21 @@ fi
 EXTRA=""; [ -n "${EXTRA_PATCHES:-}" ] && EXTRA=$(ls "$EXTRA_PATCHES"/*.patch 2>/dev/null || true)
 PSUM=$(cat "$HERE"/patches/*.patch $EXTRA | sha256sum | cut -c1-16)
 if [ "$(cat "$SRC/.patched" 2>/dev/null)" != "$CB_SHA256-$PSUM" ]; then
-    rm -rf "$SRC"; mkdir -p "$SRC"
-    tar xJf "$D/codeblocks.tar.xz" -C "$SRC" --strip-components=1
+    # a fresh tree, patched, then copied over the old one by content, so
+    # only the files a patch change touches are compiled again
+    N="$SRC.new"; rm -rf "$N"; mkdir -p "$N"
+    tar xJf "$D/codeblocks.tar.xz" -C "$N" --strip-components=1
     for p in "$HERE"/patches/*.patch $EXTRA; do
-        patch -s -d "$SRC" -p1 < "$p" || { echo "patch failed: $p"; exit 1; }
+        patch -s -d "$N" -p1 < "$p" || { echo "patch failed: $p"; exit 1; }
     done
     # what configure and build_tools/autorevision would write
     sed -e "s|@REVISION@|$CB_REVISION|g" -e "s|@DATE@|$CB_DATE|g" \
-        "$SRC/src/include/autorevision.h.in" > "$SRC/src/include/autorevision.h"
+        "$N/src/include/autorevision.h.in" > "$N/src/include/autorevision.h"
+    if [ -d "$SRC" ] && command -v rsync >/dev/null; then
+        rsync -a --checksum --delete --exclude=.patched "$N/" "$SRC/"; rm -rf "$N"
+    else
+        rm -rf "$SRC"; mv "$N" "$SRC"
+    fi
     echo "$CB_SHA256-$PSUM" > "$SRC/.patched"
 fi
 
