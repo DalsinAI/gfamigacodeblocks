@@ -1,0 +1,29 @@
+--- a/src/sdk/globals.cpp
++++ b/src/sdk/globals.cpp
+@@ -616,6 +616,26 @@
+     if (wxDirExists(tmp.GetPath())) // early out, even if full_path is a filename, but the path already exists
+         return true;
+ 
++#ifdef __AMIGA__
++    // "Volume:a/b/c": make each drawer after the volume in turn. The Unix
++    // way below would start from "/" and ask for a volume "/Volume".
++    {
++        wxString path(tmp.GetPath());
++        size_t pos = path.find(':');
++        pos = (pos == wxString::npos) ? 0 : pos + 1;
++        while (pos < path.length())
++        {
++            size_t next = path.find('/', pos);
++            if (next == wxString::npos)
++                next = path.length();
++            const wxString currdir(path.Left(next));
++            if (!wxDirExists(currdir) && !wxMkdir(currdir, perms))
++                return false;
++            pos = next + 1;
++        }
++        return true;
++    }
++#endif
+     wxArrayString dirs;
+     wxString currdir;
+     currdir = tmp.GetVolume() + tmp.GetVolumeSeparator() + wxFILE_SEP_PATH;
