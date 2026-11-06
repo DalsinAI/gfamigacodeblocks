@@ -111,8 +111,9 @@ def targets(am, top):
             c = canon(name)
             srcs = [w for w in am.expand(am.vars.get(c + '_SOURCES', ''), top).split()
                     if w.endswith(('.c', '.cpp', '.cxx', '.cc'))]
-            flags = am.expand(am.vars.get('AM_CPPFLAGS', '') + ' ' + am.vars.get(c + '_CPPFLAGS', '')
-                              + ' ' + am.vars.get('AM_CXXFLAGS', ''), top)
+            cpp = am.vars.get('AM_CPPFLAGS', '') + ' ' + am.vars.get(c + '_CPPFLAGS', '')
+            flags = (am.expand(cpp + ' ' + am.vars.get('AM_CFLAGS', '') + ' ' + am.vars.get(c + '_CFLAGS', ''), top),
+                     am.expand(cpp + ' ' + am.vars.get('AM_CXXFLAGS', '') + ' ' + am.vars.get(c + '_CXXFLAGS', ''), top))
             base = re.sub(r'\.(la|a)$', '', name)
             kind = 'program' if m.group(2) == 'PROGRAMS' else ('plugin' if m.group(1) == 'pluginlib' else 'lib')
             if m.group(1) == 'noinst' and m.group(2) == 'PROGRAMS':
@@ -129,11 +130,12 @@ def makefile(top, conf, build, mk):
             plug = ''
             if kind == 'plugin':
                 plug = ' -DCB_STATIC_PLUGIN_FILE=\\"%s\\"' % re.sub(r'^lib', '', base)
-            f = flags + ' ' + extra.get(rel, '') + plug
+            more = ' ' + extra.get(rel, '') + plug
             for s in srcs:
                 o = 'obj/%s/%s.o' % (base, os.path.relpath(s, am.dir).replace('/', '_').rsplit('.', 1)[0])
                 objs.append(o)
                 cc = '$(CC) $(CBCFLAGS)' if s.endswith('.c') else '$(CXX) $(CBCXXFLAGS)'
+                f = (flags[0] if s.endswith('.c') else flags[1]) + more
                 rules.append('%s: %s\n\t@mkdir -p $(@D)\n\t%s %s -MMD -c %s -o $@\n' % (o, s, cc, f, s))
             if kind == 'program':
                 progs.append((base, objs))
