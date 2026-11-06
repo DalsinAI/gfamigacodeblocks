@@ -37,7 +37,18 @@ if [ -z "${OXP_SRC:-}" ]; then fetch gfopenxml "$OXP_REPO" "$OXP_COMMIT"; OXP_SR
 WXB="$WORK/gfopenwx"
 WXREV=$( (git -C "$WXT_SRC" rev-parse HEAD 2>/dev/null; git -C "$WXT_SRC" diff HEAD 2>/dev/null) | sha256sum | cut -c1-16)
 if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null)" != "$WXREV" ]; then
-    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS sh "$WXT_SRC/build-amiga.sh" > "$WORK.wx.log" 2>&1 || { tail -30 "$WORK.wx.log"; exit 1; }
+    # within this run's time, so a long toolkit build shows how far it got
+    # and the next run goes on from there
+    set +e
+    STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS timeout $(( ${BUDGET_TOTAL:-840} - 20 )) \
+        sh "$WXT_SRC/build-amiga.sh" > "$WORK.wx.log" 2>&1
+    rc=$?
+    set -e
+    if [ "$rc" != 0 ]; then
+        echo "toolkit: rc=$rc after $(( $(date +%s) - t0 )) s"; tail -15 "$WORK.wx.log"
+        for f in "$WXB"/base/make.log "$WXB"/gui/make.log; do [ -f "$f" ] && { echo "== $f"; tail -5 "$f"; }; done
+        exit 1
+    fi
     echo "$WXREV" > "$WXB/out/.rev"
     echo "toolkit: $(( $(date +%s) - t0 )) s"
 fi
