@@ -24,7 +24,7 @@ The first run fetches the GFOpenWX Toolkit at the commit `codeblocks.lock` pins 
 
 | Where | What |
 |---|---|
-| `patches/` | Code::Blocks' changes for the Amiga: plugins linked in, paths, no wxURL |
+| `patches/` | Code::Blocks' changes for the Amiga: plugins linked in, paths, no wxURL, the app without IPC, tray icon or tips where wx has none |
 | `scripts/amake.py` | reads Code::Blocks' Makefile.am files: the sources of each library and plugin, and the data `make install` puts in share/codeblocks (its zips made from their rules) |
 | `scripts/build-codeblocks.sh` | fetches, patches, compiles, links and installs |
 | `config/build.conf` | the automake conditions that hold and the directories left out |
