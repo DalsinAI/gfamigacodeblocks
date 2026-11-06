@@ -7,6 +7,7 @@ CB_URL=https://sourceforge.net/projects/codeblocks/files/Sources/25.03/codeblock
 CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
 # Our own pieces, fetched at these commits
 # GFOpenWX Toolkit (wxWidgets on GFOpenLayout), with AUI, XRC, XML, the zip
-# file system, propgrid and richtext (main, PR #3 merged)
+# file system, propgrid, richtext, toolbar, books, printing, wizards:
+# branch team3/wx-toolbar-books-20261106 (PR #4) until it merges
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-WXT_COMMIT=a0b873661e0e3e0fc7753254b30538c4c21be855
+WXT_COMMIT=d773fc3825f5557a87f6652fe1e1ebd2c8cc1b1f
