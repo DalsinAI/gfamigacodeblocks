@@ -85,7 +85,7 @@ if [ "$(cat "$B/.rules" 2>/dev/null)" != "$MSUM" ]; then
         echo "obj/oxp/oxp.o: $OXP_SRC/src/oxp.c"
         printf '\t@mkdir -p $(@D)\n\t$(CC) $(CBCFLAGS) -std=gnu99 -c $< -o $@\n'
         echo "obj/amiga/wxscintilla.o: $HERE/deps/amiga/wxscintilla.cpp"
-        printf '\t@mkdir -p $(@D)\n\t$(CXX) $(CBCXXFLAGS) $(WX_CXXFLAGS) -I$SRC/src/sdk/wxscintilla/include -c $< -o $@\n'
+        printf '\t@mkdir -p $(@D)\n\t$(CXX) $(CBCXXFLAGS) $(WX_CXXFLAGS) -I%s/src/sdk/wxscintilla/include -c $< -o $@\n' "$SRC"
         echo "all: \$(CB_LIBS) \$(CB_PLUGINS) \$(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/wxscintilla.o obj/oxp/oxp.o link.args"
         echo "link.args: Makefile cb.mk"
         printf '\t@echo $(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/wxscintilla.o obj/oxp/oxp.o -Wl,--whole-archive $(CB_PLUGINS) -Wl,--no-whole-archive -Wl,--start-group $(CB_LIBS) -Wl,--end-group > $@\n'
