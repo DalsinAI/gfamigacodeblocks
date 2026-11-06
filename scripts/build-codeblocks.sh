@@ -65,11 +65,9 @@ if [ "$(cat "$B/.rules" 2>/dev/null)" != "$MSUM" ]; then
         echo "include cb.mk"
         echo "obj/amiga/progdir.o: $HERE/deps/amiga/progdir.c"
         printf '\t@mkdir -p $(@D)\n\t$(CC) $(CBCFLAGS) -c $< -o $@\n'
-        echo "obj/amiga/launch.o: $HERE/deps/amiga/launch.cpp"
-        printf '\t@mkdir -p $(@D)\n\t$(CXX) $(CBCXXFLAGS) $(WX_CXXFLAGS) -c $< -o $@\n'
-        echo "all: \$(CB_LIBS) \$(CB_PLUGINS) \$(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/launch.o link.args"
+        echo "all: \$(CB_LIBS) \$(CB_PLUGINS) \$(codeblocks_OBJS) obj/amiga/progdir.o link.args"
         echo "link.args: Makefile cb.mk"
-        printf '\t@echo $(codeblocks_OBJS) obj/amiga/progdir.o obj/amiga/launch.o -Wl,--whole-archive $(CB_PLUGINS) -Wl,--no-whole-archive -Wl,--start-group $(CB_LIBS) -Wl,--end-group > $@\n'
+        printf '\t@echo $(codeblocks_OBJS) obj/amiga/progdir.o -Wl,--whole-archive $(CB_PLUGINS) -Wl,--no-whole-archive -Wl,--start-group $(CB_LIBS) -Wl,--end-group > $@\n'
     } > "$B/Makefile"
     echo "$MSUM" > "$B/.rules"
 fi
