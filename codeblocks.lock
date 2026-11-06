@@ -1,0 +1,18 @@
+# What this port builds on: fetched at build time, never shipped.
+# Code::Blocks 25.03, the release source tarball (SVN r13644), by sha256
+CB_VERSION=25.03
+CB_REVISION=13644
+CB_DATE="2025-03-29 05:36:19"
+CB_URL=https://sourceforge.net/projects/codeblocks/files/Sources/25.03/codeblocks_25.03.tar.xz/download
+CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
+# Our own pieces, fetched at these commits
+# GFOpenWX Toolkit (wxWidgets on GFOpenLayout), with AUI, XRC, XML, the zip
+# file system, propgrid, richtext, toolbar, books, printing, wizards:
+# main 59ba62d (#5-#9 merged: Amiga paths, detached threads, stipple
+# brushes, z.library and datatypes)
+WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
+WXT_COMMIT=59ba62d7cf049054032dbd06b222e2ee80a976f6
+# OXP, our XML parser (gfopenxml): under deps/tinyxml-oxp, our own
+# TinyXML interface, in place of Code::Blocks' TinyXML copy
+OXP_REPO=https://github.com/DalsinAI/gfopenxml
+OXP_COMMIT=f5cad87472de931b71b2fa18a1f121da032a6bac
