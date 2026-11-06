@@ -66,8 +66,12 @@ public:
         if (on && !HasCapture()) CaptureMouse();
         else if (!on && HasCapture()) ReleaseMouse();
     }
-    // the change bar is Code::Blocks' own addition to Scintilla's core
+    // the change bar is Code::Blocks' own addition to Scintilla's core:
+    // without it no line is marked changed
     void SetChangeCollection(bool) {}
+    int FindChangedLine(const int, const int) const { return wxSTC_INVALID_POSITION; }
+    using wxStyledTextCtrl::EmptyUndoBuffer;
+    void EmptyUndoBuffer(bool) { wxStyledTextCtrl::EmptyUndoBuffer(); }
 
     wxDECLARE_DYNAMIC_CLASS(wxScintilla);
 };

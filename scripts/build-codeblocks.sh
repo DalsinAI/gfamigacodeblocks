@@ -41,6 +41,11 @@ if [ "$(cat "$SRC/.patched" 2>/dev/null)" != "$CB_SHA256-$PSUM" ]; then
     # (config/build.conf skips its directory)
     SCI="$N/src/sdk/wxscintilla/include/wx/wxscintilla.h"
     python3 -I "$HERE/scripts/scicompat.py" "$SCI" "$SCI.new" && mv "$SCI.new" "$SCI"
+    # its event is wxStyledTextEvent by another name, so the headers that
+    # only declare the class name it that way
+    grep -rlE '^class wxScintillaEvent;' "$N/src" | while read -r f; do
+        sed -i 's/^class wxScintillaEvent;/class wxStyledTextEvent; typedef wxStyledTextEvent wxScintillaEvent;/' "$f"
+    done
     # XML through OXP: our TinyXML interface in place of the TinyXML copy
     cp "$HERE/deps/tinyxml-oxp/tinyxml.h" "$N/src/include/tinyxml/tinyxml.h"
     echo '#include "tinyxml.h"' > "$N/src/include/tinyxml/tinystr.h"
