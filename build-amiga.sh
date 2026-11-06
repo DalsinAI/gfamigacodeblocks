@@ -39,13 +39,16 @@ WXREV=$( (git -C "$WXT_SRC" rev-parse HEAD 2>/dev/null; git -C "$WXT_SRC" diff H
 if [ ! -x "$WXB/out/sdk/bin/wx-config" ] || [ "$(cat "$WXB/out/.rev" 2>/dev/null)" != "$WXREV" ]; then
     # within this run's time, so a long toolkit build shows how far it got
     # and the next run goes on from there
+    gobj() { ls "$WXB"/gui/obj 2>/dev/null | grep -c '\.o$' || true; }
+    echo "toolkit: gui objects at start $(gobj) of $(wc -l < "$WXB/gui/sources.txt" 2>/dev/null || echo '?')"
     set +e
     STOVE="$STOVE" WORK="$WXB" OUT="$WXB/out" JOBS=$JOBS timeout $(( ${BUDGET_TOTAL:-840} - 20 )) \
         sh "$WXT_SRC/build-amiga.sh" > "$WORK.wx.log" 2>&1
     rc=$?
     set -e
     if [ "$rc" != 0 ]; then
-        echo "toolkit: rc=$rc after $(( $(date +%s) - t0 )) s"; tail -15 "$WORK.wx.log"
+        echo "toolkit: rc=$rc after $(( $(date +%s) - t0 )) s, gui objects now $(gobj)"; tail -15 "$WORK.wx.log"
+        ls -lt "$WXB"/gui/obj 2>/dev/null | sed -n 2,4p
         for f in "$WXB"/base/make.log "$WXB"/gui/make.log; do [ -f "$f" ] && { echo "== $f"; tail -5 "$f"; }; done
         exit 1
     fi
