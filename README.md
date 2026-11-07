@@ -37,6 +37,28 @@ Unpack the archive where you want the program (`lha x GFAmigaCodeBlocks-0.1.0-RC
 | `scripts/make-icon.py`, `tools/` | the Workbench icon and the LhA archive, written by our own code |
 | `deps/amiga/` | the program's drawer as a full path; wxScintilla's class info |
 
+## ARexx
+
+Code::Blocks has an ARexx port, `CODEBLOCKS.1` (`CODEBLOCKS.2` for a second copy), from the GFOpenWX Toolkit's `wxARexxPort` on arexx.class (patch 0006).
+
+| Command | Does |
+| --- | --- |
+| `OPEN FILE/A` | open a file, project or workspace, as File > Open |
+| `SAVEALL` | save every file and project (RC 5 when one was not saved) |
+| `BUILD`, `REBUILD`, `CLEAN`, `RUN` `TARGET,WAIT/S` | the active project, its active target or TARGET; WAIT answers once it has finished (RC 10, RC2 the exit code, when that is not 0) |
+| `STOP` | stop the build or the program |
+| `BUSY` | RESULT: 1 while building or running, else 0 |
+| `QUIT`, `ACTIVATE`, `DEACTIVATE`, `VERSION`, `HELP`, `FAULT` | the toolkit's standard commands |
+
+```
+/* Code::Blocks: build hello, then run it */
+ADDRESS 'CODEBLOCKS.1'
+'OPEN Work:Projects/hello/hello.cbp'
+'BUILD WAIT'
+IF rc = 0 THEN 'RUN'
+ELSE SAY 'build failed, exit code' rc2
+```
+
 ## Licence
 
 Code::Blocks is GPL v3; the patches and build files here are under the same licence, as is `deps/tinyxml-oxp/`. OXP is MIT.

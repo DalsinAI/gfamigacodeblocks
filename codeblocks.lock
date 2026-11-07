@@ -11,7 +11,7 @@ CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
 # main 59ba62d (#5-#9 merged: Amiga paths, detached threads, stipple
 # brushes, z.library and datatypes)
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-WXT_COMMIT=59ba62d7cf049054032dbd06b222e2ee80a976f6
+WXT_COMMIT=1c4e5dd981a8d3fb7ccb417bd91dd201bd18307d
 # OXP, our XML parser (gfopenxml): under deps/tinyxml-oxp, our own
 # TinyXML interface, in place of Code::Blocks' TinyXML copy
 OXP_REPO=https://github.com/DalsinAI/gfopenxml
