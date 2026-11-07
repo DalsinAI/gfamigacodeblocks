@@ -120,3 +120,10 @@ m68k-amigaos-strip -o "$I/CodeBlocks" "$B/codeblocks" || cp "$B/codeblocks" "$I/
 python3 -I "$HERE/scripts/amake.py" --data "$SRC" "$HERE/config/build.conf" "$I/share"
 ls -l "$B/codeblocks" "$I/CodeBlocks"
 du -sh "$I"
+
+# the release: the drawer's icon, ReadMe and licence, then the LhA archive
+python3 -I "$HERE/scripts/make-icon.py" "$I/CodeBlocks.info"
+cp "$HERE/README.md" "$I/ReadMe"; cp "$HERE/LICENSE" "$I/LICENSE"
+. "$HERE/release.lock"
+python3 -I "$HERE/tools/mklha.py" "$I" "$OUT/GFAmigaCodeBlocks-$RELEASE.lha"
+( cd "$OUT" && sha256sum "GFAmigaCodeBlocks-$RELEASE.lha" > SHA256SUMS && cat SHA256SUMS )

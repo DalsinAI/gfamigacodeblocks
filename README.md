@@ -18,18 +18,23 @@ Left out for now: the debugger plugin (no gdb for the Amiga yet), the contrib pl
 STOVE=~/AmiCradle/stoves/os32-gcc16-open6 OUT=out ./build-amiga.sh
 ```
 
-The first run fetches the GFOpenWX Toolkit and OXP at the commits `codeblocks.lock` pins and builds its SDK, then fetches Code::Blocks and builds it for what is left of 840 s; run it again and it goes on from where it stopped (the build tree is in `~/.cache/gfamigacodeblocks/build`, outside the checkout). `out/CodeBlocks/` appears when it links: copy the drawer anywhere and run `CodeBlocks` from it. Settings go in its `Config` drawer.
+The first run fetches the GFOpenWX Toolkit and OXP at the commits `codeblocks.lock` pins and builds its SDK, then fetches Code::Blocks and builds it for what is left of 840 s; run it again and it goes on from where it stopped (the build tree is in `~/.cache/gfamigacodeblocks/build`, outside the checkout). `out/CodeBlocks/` appears when it links, with `out/GFAmigaCodeBlocks-<release>.lha` (the release `release.lock` names) packed from it.
+
+## Installing
+
+Unpack the archive where you want the program (`lha x GFAmigaCodeBlocks-0.1.0-RC1.lha Work:`) and double-click `CodeBlocks` in its drawer, or run it from a Shell. It asks for its own 2 MB stack. Settings go in its `Config` drawer. The first start looks for compilers and takes a few minutes on a 68040.
 
 68040, soft float. With `FPUAUTO=` set to a directory holding `fpuauto.specs` and `libfpuauto.a`, the same program uses the FPU when there is one.
 
 | Where | What |
 |---|---|
-| `patches/` | Code::Blocks' changes for the Amiga: plugins linked in, paths, no wxURL, the app without IPC, tray icon or tips where wx has none |
+| `patches/` | Code::Blocks' changes for the Amiga: plugins linked in, paths, no wxURL, the app without IPC, tray icon or tips where wx has none, drawers made from the volume, the Workbench start |
 | `scripts/amake.py` | reads Code::Blocks' Makefile.am files: the sources of each library and plugin, and the data `make install` puts in share/codeblocks (its zips made from their rules) |
 | `scripts/build-codeblocks.sh` | fetches, patches, compiles, links and installs |
 | `config/build.conf` | the automake conditions that hold and the directories left out |
 | `scripts/scicompat.py` | writes the `wx/wxscintilla.h` that puts the editor on the toolkit's wxStyledTextCtrl |
 | `deps/tinyxml-oxp/` | our TinyXML interface on OXP: the tree, the printer and the reader |
+| `scripts/make-icon.py`, `tools/` | the Workbench icon and the LhA archive, written by our own code |
 | `deps/amiga/` | the program's drawer as a full path; wxScintilla's class info |
 
 ## Licence
