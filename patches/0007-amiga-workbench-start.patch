@@ -1,0 +1,36 @@
+diff --git a/src/src/app.cpp b/src/src/app.cpp
+index 9b6a1f9..c58bfa6 100644
+--- a/src/src/app.cpp
++++ b/src/src/app.cpp
+@@ -339,7 +339,31 @@ public:
+ void cbMessageOutputNull::Output(cb_unused const wxString &str){}
+ } // namespace
+ 
++#ifdef __AMIGA__
++wxIMPLEMENT_APP_NO_MAIN(CodeBlocksApp);
++
++// The stack the program asks for: libnix gives the program this much
++// whether it starts from a Shell or from Workbench.
++extern "C" { unsigned long __stack = 2097152; }
++
++// A Workbench start gives argc 0 and the WBStartup message in place of
++// argv, so wx gets the program's name instead. A release build: wx's
++// debug alerts stay out.
++int main(int argc, char* argv[])
++{
++    static char progName[] = "CodeBlocks";
++    static char* wbArgv[] = { progName, nullptr };
++    if (argc == 0)
++    {
++        argc = 1;
++        argv = wbArgv;
++    }
++    wxDISABLE_DEBUG_SUPPORT();
++    return wxEntry(argc, argv);
++}
++#else
+ IMPLEMENT_APP(CodeBlocksApp) // TODO: This gives a "redundant declaration" warning, though I think it's false. Dig through macro and check.
++#endif
+ 
+ BEGIN_EVENT_TABLE(CodeBlocksApp, wxApp)
+     EVT_ACTIVATE_APP(CodeBlocksApp::OnAppActivate)
