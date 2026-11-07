@@ -59,6 +59,8 @@ IF rc = 0 THEN 'RUN'
 ELSE SAY 'build failed, exit code' rc2
 ```
 
+`Rexx/Build.rexx` (in the Rexx drawer beside the program) is an example.
+
 ## Licence
 
 Code::Blocks is GPL v3; the patches and build files here are under the same licence, as is `deps/tinyxml-oxp/`. OXP is MIT.
