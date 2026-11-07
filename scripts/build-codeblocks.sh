@@ -118,5 +118,7 @@ I="$OUT/CodeBlocks"
 rm -rf "$I"; mkdir -p "$I/Config"
 m68k-amigaos-strip -o "$I/CodeBlocks" "$B/codeblocks" || cp "$B/codeblocks" "$I/CodeBlocks"
 python3 -I "$HERE/scripts/amake.py" --data "$SRC" "$HERE/config/build.conf" "$I/share"
+# the ARexx example (README: ARexx)
+mkdir -p "$I/Rexx"; cp "$HERE"/Rexx/*.rexx "$I/Rexx/"
 ls -l "$B/codeblocks" "$I/CodeBlocks"
 du -sh "$I"
