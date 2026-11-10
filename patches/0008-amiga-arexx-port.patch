@@ -2,13 +2,15 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
 
 --- a/src/src/app.cpp	2026-11-07 13:45:15.432900103 +0000
 +++ b/src/src/app.cpp	2026-11-07 13:45:43.849481179 +0000
-@@ -606,6 +606,101 @@
+@@ -606,6 +606,144 @@
      }
  }
  
 +#ifdef __AMIGA__
 +#include <wx/openlayout/arexx.h>
 +#include "cbplugin.h"
++#include "cbproject.h"
++#include "editorbase.h"
 +
 +// AmigaOS: the ARexx port CODEBLOCKS.1, on the GFOpenWX Toolkit's
 +// wxARexxPort and arexx.class, with the toolkit's QUIT, ACTIVATE,
@@ -21,6 +23,10 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
 +//                          and RC2 the exit code when that is not 0
 +//   STOP                   stop the build or the program
 +//   BUSY                   RESULT: 1 while building or running, else 0
++//   QUIT FORCE/S           as the toolkit's, with no requester: RC 5 when
++//                          files are unsaved; FORCE drops their changes
++bool g_AmigaRexxQuit = false;   // an ARexx QUIT is closing the program (main.cpp)
++
 +static void AmigaRexxStart(MainFrame* frame)
 +{
 +    static const long kWait = 3600000; // an hour at most
@@ -92,6 +98,43 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
 +        if (cbCompilerPlugin* cp = compiler(c))
 +            c.SetResult(cp->IsRunning() ? "1" : "0");
 +    });
++    // QUIT of its own, with no requester: unsaved files make a plain QUIT
++    // answer RC 5 and leave everything open; QUIT FORCE drops their changes.
++    // The perspective question is answered as its Yes (patch 0009).
++    rexx->Add("QUIT", "FORCE/S", [frame](wxARexxCommand& c) {
++        const bool force = c.Switch(0);
++        EditorManager* em = Manager::Get()->GetEditorManager();
++        ProjectsArray* prjs = Manager::Get()->GetProjectManager()->GetProjects();
++        bool modified = false;
++        for (int i = 0; i < em->GetEditorsCount(); ++i)
++            if (EditorBase* ed = em->GetEditor(i))
++                if (ed->GetModified())
++                {
++                    modified = true;
++                    if (force)
++                        ed->SetModified(false);
++                }
++        for (size_t i = 0; prjs && i < prjs->GetCount(); ++i)
++            if (prjs->Item(i)->GetModified())
++            {
++                modified = true;
++                if (force)
++                    prjs->Item(i)->SetModified(false);
++            }
++        if (modified && !force)
++        {
++            c.SetError(5);
++            return;
++        }
++        g_AmigaRexxQuit = true;
++        if (!frame->Close(force) && !force)
++        {
++            g_AmigaRexxQuit = false;
++            c.SetError(5);
++        }
++        else if (force)
++            wxTheApp->ExitMainLoop();
++    });
 +    rexx->Open();
 +    frame->Bind(wxEVT_DESTROY, [frame, rexx](wxWindowDestroyEvent& ev) {
 +        if (ev.GetEventObject() == frame)
@@ -104,7 +147,7 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
  bool CodeBlocksApp::OnInit()
  {
  #ifdef __WXMSW__
-@@ -851,6 +946,9 @@
+@@ -851,6 +989,9 @@
          frame->Show();
  
          frame->StartupDone();

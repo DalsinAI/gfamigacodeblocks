@@ -48,7 +48,8 @@ Code::Blocks has an ARexx port, `CODEBLOCKS.1` (`CODEBLOCKS.2` for a second copy
 | `BUILD`, `REBUILD`, `CLEAN`, `RUN` `TARGET,WAIT/S` | the active project, its active target or TARGET; WAIT answers once it has finished (RC 10, RC2 the exit code, when that is not 0) |
 | `STOP` | stop the build or the program |
 | `BUSY` | RESULT: 1 while building or running, else 0 |
-| `QUIT`, `ACTIVATE`, `DEACTIVATE`, `VERSION`, `HELP`, `FAULT` | the toolkit's standard commands |
+| `QUIT FORCE/S` | close Code::Blocks with no requester: RC 5 and nothing closed while files or projects are unsaved; `FORCE` drops their changes. A changed perspective is kept, as the Layout changed question's Yes does (patch 0009) |
+| `ACTIVATE`, `DEACTIVATE`, `VERSION`, `HELP`, `FAULT` | the toolkit's standard commands |
 
 ```
 /* Code::Blocks: build hello, then run it */
