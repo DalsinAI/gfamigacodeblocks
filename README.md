@@ -22,7 +22,7 @@ The first run fetches the GFOpenWX Toolkit and OXP at the commits `codeblocks.lo
 
 ## Installing
 
-Unpack the archive where you want the program (`lha x GFAmigaCodeBlocks-0.1.0-RC1.lha Work:`) and double-click `CodeBlocks` in its drawer, or run it from a Shell. It asks for its own 2 MB stack. Settings go in its `Config` drawer. The first start looks for compilers and takes a few minutes on a 68040. `Libs/` in the drawer holds regex.library (GFOpenRegex), which the toolkit's wxRegEx opens; Code::Blocks stops at start without it.
+Unpack the archive where you want the program (`lha x GFAmigaCodeBlocks-0.1.0-RC1.lha Work:`) and double-click `CodeBlocks` in its drawer, or run it from a Shell. It asks for its own 2 MB stack. Settings go in its `Config` drawer. The first start looks for compilers and takes a few minutes on a 68040. Code::Blocks needs regex.library (GFOpenRegex) in `LIBS:`: the toolkit's wxRegEx opens it, and without it Code::Blocks stops at start. The archive carries a copy in `Libs/`; copy it to `LIBS:` when `LIBS:` has none (OS 3.2 does not look in the program's drawer).
 
 68040, soft float. With `FPUAUTO=` set to a directory holding `fpuauto.specs` and `libfpuauto.a`, the same program uses the FPU when there is one.
 
