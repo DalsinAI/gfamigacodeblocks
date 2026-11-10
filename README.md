@@ -39,7 +39,7 @@ Unpack the archive where you want the program (`lha x GFAmigaCodeBlocks-0.1.0-RC
 
 ## ARexx
 
-Code::Blocks has an ARexx port, `CODEBLOCKS.1` (`CODEBLOCKS.2` for a second copy), from the GFOpenWX Toolkit's `wxARexxPort` on arexx.class (patch 0006).
+Code::Blocks has an ARexx port, `CODEBLOCKS.1` (`CODEBLOCKS.2` for a second copy), from the GFOpenWX Toolkit's `wxARexxPort` on arexx.class (patch 0008).
 
 | Command | Does |
 | --- | --- |
