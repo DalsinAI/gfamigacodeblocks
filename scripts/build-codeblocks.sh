@@ -120,6 +120,7 @@ m68k-amigaos-strip -o "$I/CodeBlocks" "$B/codeblocks" || cp "$B/codeblocks" "$I/
 python3 -I "$HERE/scripts/amake.py" --data "$SRC" "$HERE/config/build.conf" "$I/share"
 # the ARexx example (README: ARexx)
 mkdir -p "$I/Rexx"; cp "$HERE"/Rexx/*.rexx "$I/Rexx/"
+mkdir -p "$I/tests"; cp "$HERE/tests/arexx.rexx" "$I/tests/"   # the ARexx port test
 ls -l "$B/codeblocks" "$I/CodeBlocks"
 du -sh "$I"
 
