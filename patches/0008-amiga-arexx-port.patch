@@ -2,7 +2,7 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
 
 --- a/src/src/app.cpp	2026-11-07 13:45:15.432900103 +0000
 +++ b/src/src/app.cpp	2026-11-07 13:45:43.849481179 +0000
-@@ -606,6 +606,101 @@
+@@ -606,6 +606,99 @@
      }
  }
  
@@ -48,9 +48,7 @@ AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN,
 +            c.SetError(10, r);
 +            return;
 +        }
-+        // the build's output is read in idle handlers: give them time while waiting
 +        if (c.Switch(1) && rexx->WaitFor(c, [cp]() {
-+                wxTheApp->ProcessIdle();
 +                return Manager::IsAppShuttingDown() || !cp->IsRunning();
 +            }, kWait))
 +        {
