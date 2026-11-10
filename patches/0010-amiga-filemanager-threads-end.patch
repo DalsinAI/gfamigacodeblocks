@@ -1,0 +1,100 @@
+AmigaOS: Code::Blocks ends when it quits. FileManager's three loader threads were never told to end (FileManager is never freed, and its Die() calls are commented out); the C library's exit waits for every thread still alive, so after QUIT the process stayed with its threads waiting on their semaphores. The threads are now on the heap (a detached wxThread deletes itself when it ends), ~FileManager tells them to end, and Manager::Shutdown frees FileManager after the other managers.
+
+--- a/src/include/filemanager.h
++++ b/src/include/filemanager.h
+@@ -111,9 +111,18 @@
+ // ***** class: FileManager *****
+ class DLLIMPORT FileManager : public Mgr<FileManager>
+ {
++#ifdef __AMIGA__
++    // on the heap: a detached wxThread deletes itself when told to end, and
++    // these are told to end in ~FileManager (the C library's exit waits for
++    // every thread still alive, so threads left waiting kept the program open)
++    BackgroundThread *fileLoaderThread;
++    BackgroundThread *uncLoaderThread;
++    BackgroundThread *urlLoaderThread;
++#else
+     BackgroundThread fileLoaderThread;
+     BackgroundThread uncLoaderThread;
+     BackgroundThread urlLoaderThread;
++#endif
+ public:
+     FileManager();
+     ~FileManager() override;
+--- a/src/sdk/filemanager.cpp
++++ b/src/sdk/filemanager.cpp
+@@ -125,6 +125,22 @@
+ }
+ 
+ // ***** class: FileManager *****
++#ifdef __AMIGA__
++FileManager::FileManager()
++    : fileLoaderThread(new BackgroundThread(false)),
++    uncLoaderThread(new BackgroundThread(false)),
++    urlLoaderThread(new BackgroundThread(false))
++{
++}
++
++FileManager::~FileManager()
++{
++    // each ends its loop and deletes itself (detached)
++    fileLoaderThread->Die();
++    uncLoaderThread->Die();
++    urlLoaderThread->Die();
++}
++#else
+ FileManager::FileManager()
+     : fileLoaderThread(false),
+     uncLoaderThread(false),
+@@ -138,6 +154,7 @@
+ //  uncLoaderThread.Die();
+ //  urlLoaderThread.Die();
+ }
++#endif
+ 
+ LoaderBase* FileManager::Load(const wxString& file, bool reuseEditors)
+ {
+@@ -166,7 +183,11 @@
+     if (file.StartsWith("http://"))
+     {
+         URLLoader *ul = new URLLoader(file);
++#ifdef __AMIGA__
++        urlLoaderThread->Queue(ul);
++#else
+         urlLoaderThread.Queue(ul);
++#endif
+         return ul;
+     }
+ 
+@@ -176,11 +197,19 @@
+     {
+         // UNC files behave like "normal" files, but since we know they are served over the network,
+         // we can run them independently from local filesystem files for higher concurrency
++#ifdef __AMIGA__
++        uncLoaderThread->Queue(fl);
++#else
+         uncLoaderThread.Queue(fl);
++#endif
+         return fl;
+     }
+ 
++#ifdef __AMIGA__
++    fileLoaderThread->Queue(fl);
++#else
+     fileLoaderThread.Queue(fl);
++#endif
+     return fl;
+ }
+ 
+--- a/src/sdk/manager.cpp
++++ b/src/sdk/manager.cpp
+@@ -247,6 +247,9 @@
+     PersonalityManager::Free();
+     MacrosManager::Free();
+     UserVariableManager::Free();
++#ifdef __AMIGA__
++    FileManager::Free();    // ends its loader threads (filemanager.cpp)
++#endif
+     LogManager::Free();
+     CfgMgrBldr::Free();
+ }
