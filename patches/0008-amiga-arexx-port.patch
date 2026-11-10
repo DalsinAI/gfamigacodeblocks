@@ -1,0 +1,159 @@
+AmigaOS: the ARexx port CODEBLOCKS.1 (OPEN, SAVEALL, BUILD, REBUILD, CLEAN, RUN, STOP, BUSY)
+
+--- a/src/src/app.cpp	2026-11-07 13:45:15.432900103 +0000
++++ b/src/src/app.cpp	2026-11-07 13:45:43.849481179 +0000
+@@ -606,6 +606,144 @@
+     }
+ }
+ 
++#ifdef __AMIGA__
++#include <wx/openlayout/arexx.h>
++#include "cbplugin.h"
++#include "cbproject.h"
++#include "editorbase.h"
++
++// AmigaOS: the ARexx port CODEBLOCKS.1, on the GFOpenWX Toolkit's
++// wxARexxPort and arexx.class, with the toolkit's QUIT, ACTIVATE,
++// DEACTIVATE, VERSION, HELP and FAULT:
++//   OPEN FILE/A            a file, project or workspace, as File > Open
++//   SAVEALL                every file and project
++//   BUILD, REBUILD, CLEAN, RUN  TARGET,WAIT/S
++//                          the active project (its active target, or
++//                          TARGET); WAIT answers once it has finished: RC 10
++//                          and RC2 the exit code when that is not 0
++//   STOP                   stop the build or the program
++//   BUSY                   RESULT: 1 while building or running, else 0
++//   QUIT FORCE/S           as the toolkit's, with no requester: RC 5 when
++//                          files are unsaved; FORCE drops their changes
++bool g_AmigaRexxQuit = false;   // an ARexx QUIT is closing the program (main.cpp)
++
++static void AmigaRexxStart(MainFrame* frame)
++{
++    static const long kWait = 3600000; // an hour at most
++    wxARexxPort* rexx = new wxARexxPort("CODEBLOCKS", "Code::Blocks " + appglobals::AppVersion);
++    auto compiler = [](wxARexxCommand& c) -> cbCompilerPlugin* {
++        cbCompilerPlugin* cp = Manager::IsAppShuttingDown() ? nullptr
++                               : Manager::Get()->GetPluginManager()->GetFirstCompiler();
++        if (!cp)
++            c.SetError(20);
++        return cp;
++    };
++    auto build = [rexx, compiler](wxARexxCommand& c, int (cbCompilerPlugin::*byTarget)(ProjectBuildTarget*),
++                                  int (cbCompilerPlugin::*byName)(const wxString&)) {
++        cbCompilerPlugin* cp = compiler(c);
++        if (!cp)
++            return;
++        if (cp->IsRunning() || !Manager::Get()->GetProjectManager()->GetActiveProject())
++        {
++            c.SetError(10);
++            return;
++        }
++        int r = c.Has(0) ? (cp->*byName)(c.Str(0)) : (cp->*byTarget)(nullptr);
++        if (r != 0)
++        {
++            c.SetError(10, r);
++            return;
++        }
++        // the build's output is read in idle handlers: give them time while waiting
++        if (c.Switch(1) && rexx->WaitFor(c, [cp]() {
++                wxTheApp->ProcessIdle();
++                return Manager::IsAppShuttingDown() || !cp->IsRunning();
++            }, kWait))
++        {
++            if (cp->GetExitCode() != 0)
++                c.SetError(10, cp->GetExitCode());
++        }
++    };
++    rexx->Add("OPEN", "FILE/A", [frame](wxARexxCommand& c) {
++        wxString file = c.Str(0);
++        if (!wxFileExists(file))
++            c.SetError(10, 205);    // object not found
++        else if (!frame->Open(file))
++            c.SetError(10);
++    });
++    rexx->Add("SAVEALL", "", [](wxARexxCommand& c) {
++        if (Manager::IsAppShuttingDown())
++            c.SetError(20);
++        else if (!Manager::Get()->GetEditorManager()->SaveAll() ||
++                 !Manager::Get()->GetProjectManager()->SaveAllProjects())
++            c.SetError(5);
++    });
++    rexx->Add("BUILD", "TARGET,WAIT/S", [build](wxARexxCommand& c) {
++        build(c, &cbCompilerPlugin::Build, &cbCompilerPlugin::Build);
++    });
++    rexx->Add("REBUILD", "TARGET,WAIT/S", [build](wxARexxCommand& c) {
++        build(c, &cbCompilerPlugin::Rebuild, &cbCompilerPlugin::Rebuild);
++    });
++    rexx->Add("CLEAN", "TARGET,WAIT/S", [build](wxARexxCommand& c) {
++        build(c, &cbCompilerPlugin::Clean, &cbCompilerPlugin::Clean);
++    });
++    rexx->Add("RUN", "TARGET,WAIT/S", [build](wxARexxCommand& c) {
++        build(c, &cbCompilerPlugin::Run, &cbCompilerPlugin::Run);
++    });
++    rexx->Add("STOP", "", [compiler](wxARexxCommand& c) {
++        if (cbCompilerPlugin* cp = compiler(c))
++            cp->KillProcess();
++    });
++    rexx->Add("BUSY", "", [compiler](wxARexxCommand& c) {
++        if (cbCompilerPlugin* cp = compiler(c))
++            c.SetResult(cp->IsRunning() ? "1" : "0");
++    });
++    // QUIT of its own, with no requester: unsaved files make a plain QUIT
++    // answer RC 5 and leave everything open; QUIT FORCE drops their changes.
++    // The perspective question is answered as its Yes (patch 0009).
++    rexx->Add("QUIT", "FORCE/S", [frame](wxARexxCommand& c) {
++        const bool force = c.Switch(0);
++        EditorManager* em = Manager::Get()->GetEditorManager();
++        ProjectsArray* prjs = Manager::Get()->GetProjectManager()->GetProjects();
++        bool modified = false;
++        for (int i = 0; i < em->GetEditorsCount(); ++i)
++            if (EditorBase* ed = em->GetEditor(i))
++                if (ed->GetModified())
++                {
++                    modified = true;
++                    if (force)
++                        ed->SetModified(false);
++                }
++        for (size_t i = 0; prjs && i < prjs->GetCount(); ++i)
++            if (prjs->Item(i)->GetModified())
++            {
++                modified = true;
++                if (force)
++                    prjs->Item(i)->SetModified(false);
++            }
++        if (modified && !force)
++        {
++            c.SetError(5);
++            return;
++        }
++        g_AmigaRexxQuit = true;
++        if (!frame->Close(force) && !force)
++        {
++            g_AmigaRexxQuit = false;
++            c.SetError(5);
++        }
++        else if (force)
++            wxTheApp->ExitMainLoop();
++    });
++    rexx->Open();
++    frame->Bind(wxEVT_DESTROY, [frame, rexx](wxWindowDestroyEvent& ev) {
++        if (ev.GetEventObject() == frame)
++            delete rexx;
++        ev.Skip();
++    });
++}
++#endif
++
+ bool CodeBlocksApp::OnInit()
+ {
+ #ifdef __WXMSW__
+@@ -851,6 +989,9 @@
+         frame->Show();
+ 
+         frame->StartupDone();
++#ifdef __AMIGA__
++        AmigaRexxStart(frame);
++#endif
+ 
+         frame->ShowTips(); // this func checks if the user wants tips, so no need to check here
+ 

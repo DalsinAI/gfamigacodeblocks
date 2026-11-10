@@ -1,0 +1,21 @@
+AmigaOS: an ARexx QUIT puts up no "Layout changed" requester; the perspective is kept, as its Yes does (ARexx-RULE.md: no requester blocks an ARexx command).
+
+--- a/src/src/main.cpp
++++ b/src/src/main.cpp
+@@ -2053,6 +2053,16 @@
+ 
+     if (layoutChanged)
+     {
++#ifdef __AMIGA__
++        // an ARexx QUIT puts up no requester (app.cpp): the perspective is
++        // kept, as Yes does
++        extern bool g_AmigaRexxQuit;
++        if (g_AmigaRexxQuit)
++        {
++            SaveViewLayout(m_LastLayoutName, lastlayout, lastmessagepanelayout, false);
++            return true;
++        }
++#endif
+         AnnoyingDialog dlg(_("Layout changed"),
+                             wxString::Format(_("The perspective '%s' has changed. Do you want to save it?"), m_LastLayoutName),
+                             wxART_QUESTION,

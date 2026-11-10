@@ -8,10 +8,14 @@ CB_SHA256=b0f6aa5908d336d7f41f9576b2418ac7d27efbc59282aa8c9171d88cea74049e
 # Our own pieces, fetched at these commits
 # GFOpenWX Toolkit (wxWidgets on GFOpenLayout), with AUI, XRC, XML, the zip
 # file system, propgrid, richtext, toolbar, books, printing, wizards:
-# main 59ba62d (#5-#9 merged: Amiga paths, detached threads, stipple
-# brushes, z.library and datatypes)
+# main 1c4e5dd, v0.1.0-rc4 (#5-#9: Amiga paths, detached threads, stipple
+# brushes, z.library and datatypes; #15: wxARexxPort)
 WXT_REPO=https://github.com/DalsinAI/gfopenwxtoolkit
-WXT_COMMIT=59ba62d7cf049054032dbd06b222e2ee80a976f6
+WXT_COMMIT=1c4e5dd981a8d3fb7ccb417bd91dd201bd18307d
+# regex.library (GFOpenRegex): the toolkit's wxRegEx at run time (Code::Blocks
+# makes its macro and compiler regexes at start), shipped in CodeBlocks/Libs
+GFOPENREGEX_URL=https://github.com/DalsinAI/gfopenregex/releases/download/v1.0-rc1/GFOpenRegex-1.0-rc1.zip
+GFOPENREGEX_SHA256=d596e9135be7407bd2f5baf7f6798da2e873125e120793ce190c0d4455ddb808
 # OXP, our XML parser (gfopenxml): under deps/tinyxml-oxp, our own
 # TinyXML interface, in place of Code::Blocks' TinyXML copy
 OXP_REPO=https://github.com/DalsinAI/gfopenxml
