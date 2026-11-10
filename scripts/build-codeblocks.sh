@@ -121,6 +121,12 @@ python3 -I "$HERE/scripts/amake.py" --data "$SRC" "$HERE/config/build.conf" "$I/
 # the ARexx example (README: ARexx)
 mkdir -p "$I/Rexx"; cp "$HERE"/Rexx/*.rexx "$I/Rexx/"
 mkdir -p "$I/tests"; cp "$HERE/tests/arexx.rexx" "$I/tests/"   # the ARexx port test
+# regex.library (GFOpenRegex), which the toolkit's wxRegEx opens: in Libs/ beside the program
+X="$D/gfopenregex-$(echo "$GFOPENREGEX_SHA256" | cut -c1-16).zip"
+[ -f "$X" ] || curl -fsSL -o "$X" "$GFOPENREGEX_URL" || { echo "regex.library download failed"; exit 1; }
+echo "$GFOPENREGEX_SHA256  $X" | sha256sum -c - >/dev/null || { echo "regex.library archive checksum differs"; exit 1; }
+mkdir -p "$I/Libs"
+python3 -I -c 'import sys,zipfile; open(sys.argv[2],"wb").write(zipfile.ZipFile(sys.argv[1]).read("GFOpenRegex/Libs/regex.library"))' "$X" "$I/Libs/regex.library"
 ls -l "$B/codeblocks" "$I/CodeBlocks"
 du -sh "$I"
 
