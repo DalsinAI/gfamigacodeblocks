@@ -4,6 +4,10 @@ Code::Blocks 25.03, the C and C++ IDE, for AmigaOS 3 (68040), on the GFOpenWX To
 
 Code::Blocks is fetched at build time at the version `codeblocks.lock` pins, and `patches/` is applied to it; nothing third-party is kept in this repository.
 
+## Needs
+
+`gfopenlayout.library` 12 or later in `LIBS:`. Code::Blocks's windows are drawn by GFOpenLayout through that library, not a copy built into the program (GFOffice Libs ships version 25). Without it Code::Blocks says "This needs gfopenlayout.library 12 or later in LIBS:" and stops.
+
 ## What is built
 
 - The IDE with Squirrel scripting and the start page, on our own libraries: the editor is the toolkit's wxStyledTextCtrl (the one Scintilla, in GFOpenWX), and XML goes through OXP, our parser (gfopenxml), under our own TinyXML interface. Code::Blocks' wxScintilla and TinyXML copies are not built.
